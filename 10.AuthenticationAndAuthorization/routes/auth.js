@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require("../models/User");
 const hash = require("../helpers/hash");
 const bcrypt = require("bcrypt");
+const authMiddleware = require("../middlewares/auth");
 
 router.get("/register", async (req, res) => {
   //0. Validate user input
@@ -21,7 +22,7 @@ router.get("/register", async (req, res) => {
     const {email, password} = req.body;
     const newUser = new User({email, password});
     await newUser.save();
-    return res.status(201).json({msg: "Created user", user: {
+    return res.header("x-auth-token", newUser.generateAuthToken()).status(201).json({msg: "Created user", user: {
       id: newUser._id,
       email: newUser.email,
       password: hash.doHashPass(newUser.password)
@@ -32,7 +33,7 @@ router.get("/register", async (req, res) => {
 });
 
 
-router.post("/login", async (req, res) => {
+router.post("/login", authMiddleware.checkToken, async (req, res) => {
   //0. Validate user input
   const {error} = User.validateUser(req.body);
   if (error) 
@@ -49,7 +50,7 @@ router.post("/login", async (req, res) => {
     // 3. If existed, compare password 
     if (await bcrypt.compare(user.password, req.body.password))
       // 4. If compare success -> return 200 OK 
-      return res.status(200).json({msg: "logged in"});
+      return res.header("x-auth-token", user.generateAuthToken()).status(200).json({msg: "logged in"});
       // 5. If compare failed -> return 400 bad request
     else 
       return res.status(400).json({ msg: "Bad Request" });
