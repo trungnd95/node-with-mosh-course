@@ -48,7 +48,7 @@ router.post("/login", authMiddleware.checkToken, async (req, res) => {
       return res.status(400).json({ msg: 'Email or password is not match!' });
 
     // 3. If existed, compare password 
-    if (await bcrypt.compare(user.password, req.body.password))
+    if (await bcrypt.compare(req.body.password, user.password))
       // 4. If compare success -> return 200 OK 
       return res.header("x-auth-token", user.generateAuthToken()).status(200).json({msg: "logged in"});
       // 5. If compare failed -> return 400 bad request
